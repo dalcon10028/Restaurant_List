@@ -16,7 +16,7 @@
       <v-col cols="1">최근기록</v-col>
       <v-col>
         <v-chip-group active-class="primary--text" column>
-          <v-chip v-for="tag in tags" :key="tag">
+          <v-chip v-for="tag in tags" :key="tag" @click="onClickHistory(tag)">
             {{ tag }}
           </v-chip>
         </v-chip-group>
@@ -74,7 +74,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="warning" text @click="dialog = false">닫기</v-btn>
-          <v-btn color="green darken-1" text @click="dialog = false">
+          <v-btn color="green darken-1" text @click="pushWish">
             위시리스트 추가
           </v-btn>
         </v-card-actions>
@@ -97,19 +97,14 @@ export default Vue.extend({
       resultList: [],
       selectedItem: {
         thumbnail: null,
+        title: "",
       },
-      tags: [
-        "Work",
-        "Home Improvement",
-        "Vacation",
-        "Food",
-        "Drawers",
-        "Shopping",
-        "Art",
-        "Tech",
-        "Creative Writing",
-      ],
+      tags: [],
     };
+  },
+
+  created() {
+    this.fetchSearchHistory();
   },
 
   methods: {
@@ -122,6 +117,7 @@ export default Vue.extend({
         ...item,
         thumbnail: data.items[idx].thumbnail,
       }));
+      this.pushSearchHistory(this.keyword);
     },
 
     selectLocal(item: any) {
@@ -129,9 +125,40 @@ export default Vue.extend({
       this.dialog = true;
     },
 
-    pushWish(item: any) {
+    pushWish() {
+      const item = this.selectedItem;
       const wishList = JSON.parse(localStorage.getItem("wishlist") || "[]");
-      localStorage.setItem("wishlist", JSON.stringify(wishList.push(item)));
+      wishList.push(item);
+      localStorage.setItem("wishlist", JSON.stringify(wishList));
+      this.dialog = false;
+      alert(`${this.selectedItem.title}이 위시리스트에 추가되었습니다!`);
+    },
+
+    pushSearchHistory(keyword: string) {
+      const history = JSON.parse(
+        localStorage.getItem("search-history") || "[]"
+      );
+
+      // 키워드가 검색 이력에 없는 경우
+      if (!history.find((word: string) => word === keyword)) {
+        if (history.length >= 5) history.shift();
+        this.tags = history;
+        history.push(keyword);
+        localStorage.setItem("search-history", JSON.stringify(history));
+      }
+    },
+
+    fetchSearchHistory() {
+      const history = JSON.parse(
+        localStorage.getItem("search-history") || "[]"
+      );
+      console.log(history);
+      this.tags = history;
+    },
+
+    onClickHistory(keyword: string) {
+      this.keyword = keyword;
+      this.searchList();
     },
   },
 });
